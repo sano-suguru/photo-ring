@@ -1,0 +1,58 @@
+erDiagram
+    User {
+        string id PK
+        string email
+        string name
+        string password
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Group {
+        string id PK
+        string name
+        string description
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    GroupMember {
+        string id PK
+        string groupId FK
+        string userId FK
+        enum role
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Album {
+        string id PK
+        string title
+        string description
+        string groupId FK
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Photo {
+        string id PK
+        string title
+        string description
+        string filename
+        string originalName
+        string mimeType
+        int size
+        int width
+        int height
+        json metadata
+        string uploaderId FK
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    User ||--o{ GroupMember : "has"
+    Group ||--o{ GroupMember : "has"
+    Group ||--o{ Album : "has"
+    GroupMember ||--o{ Photo : "uploads"
+    Album ||--o{ Photo : "contains"
+    
