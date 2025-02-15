@@ -12,6 +12,7 @@ erDiagram
         string id PK
         string name
         string description
+        boolean isPrivate
         datetime createdAt
         datetime updatedAt
     }
@@ -55,4 +56,3 @@ erDiagram
     Group ||--o{ Album : "has"
     GroupMember ||--o{ Photo : "uploads"
     Album ||--o{ Photo : "contains"
-    
