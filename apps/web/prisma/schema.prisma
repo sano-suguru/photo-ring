@@ -21,6 +21,7 @@ model Group {
   id          String        @id @default(cuid())
   name        String
   description String?
+  isPrivate   Boolean       @default(false)    // プライベートグループかどうかのフラグ
   members     GroupMember[]
   albums      Album[]
   createdAt   DateTime      @default(now())
