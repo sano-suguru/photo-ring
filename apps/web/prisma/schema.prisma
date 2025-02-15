@@ -8,32 +8,38 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String
-  photos    Photo[]
-  albums    Album[]
-  likes     Like[]
-  comments  Comment[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String        @id @default(cuid())
+  email         String        @unique
+  name          String
+  password      String
+  groups        GroupMember[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
-model Photo {
-  id          String    @id @default(cuid())
-  title       String
+model Group {
+  id          String        @id @default(cuid())
+  name        String
   description String?
-  url         String
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  members     GroupMember[]
   albums      Album[]
-  likes       Like[]
-  comments    Comment[]
-  metadata    Json?     // EXIF データなどの写真のメタデータ
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
 
+model GroupMember {
+  id        String     @id @default(cuid())
+  groupId   String
+  userId    String
+  role      GroupRole  @default(MEMBER)
+  group     Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos    Photo[]    // アップロードした写真との関連
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([groupId, userId])
+  @@index([groupId])
   @@index([userId])
 }
 
@@ -41,38 +47,37 @@ model Album {
   id          String    @id @default(cuid())
   title       String
   description String?
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  groupId     String
+  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   photos      Photo[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  @@index([userId])
+  @@index([groupId])
 }
 
-model Like {
-  id        String   @id @default(cuid())
-  userId    String
-  photoId   String
-  user      User     @relation(fields: [userId], references: [id])
-  photo     Photo    @relation(fields: [photoId], references: [id])
-  createdAt DateTime @default(now())
+model Photo {
+  id            String      @id @default(cuid())
+  title         String
+  description   String?
+  filename      String      // S3内のファイル名
+  originalName  String      // アップロード時の元のファイル名
+  mimeType      String      // ファイルのMIMEタイプ
+  size          Int         // ファイルサイズ（バイト）
+  width         Int?        // 画像の幅
+  height        Int?        // 画像の高さ
+  metadata      Json?       // EXIF データなどのメタデータ
+  uploaderId    String      // アップロードしたGroupMemberのID
+  uploader      GroupMember @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  albums        Album[]     // 所属するアルバム
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  @@unique([userId, photoId])
-  @@index([userId])
-  @@index([photoId])
+  @@index([uploaderId])
 }
 
-model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  userId    String
-  photoId   String
-  user      User     @relation(fields: [userId], references: [id])
-  photo     Photo    @relation(fields: [photoId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([photoId])
+enum GroupRole {
+  ADMIN    // グループの管理、メンバー管理
+  MEMBER   // 写真のアップロード、アルバム作成
+  VIEWER   // 閲覧のみ
 }
