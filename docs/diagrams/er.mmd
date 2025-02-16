@@ -2,13 +2,13 @@ erDiagram
     User {
         string id PK
         string email
-        string name
-        string password
+        string displayName
+        string cognitoSub UK
         datetime createdAt
         datetime updatedAt
     }
 
-    Group {
+    PhotoSpace {
         string id PK
         string name
         string description
@@ -17,20 +17,20 @@ erDiagram
         datetime updatedAt
     }
 
-    GroupMember {
+    PhotoSpaceMember {
         string id PK
-        string groupId FK
+        string spaceId FK
         string userId FK
         enum role
         datetime createdAt
         datetime updatedAt
     }
 
-    Album {
+    PhotoAlbum {
         string id PK
         string title
         string description
-        string groupId FK
+        string spaceId FK
         datetime createdAt
         datetime updatedAt
     }
@@ -39,20 +39,20 @@ erDiagram
         string id PK
         string title
         string description
-        string filename
-        string originalName
+        string storagePath
+        string sourceFilename
         string mimeType
-        int size
-        int width
-        int height
-        json metadata
-        string uploaderId FK
+        int fileSizeBytes
+        int imageWidth
+        int imageHeight
+        json imageMetadata
+        string createdById FK
         datetime createdAt
         datetime updatedAt
     }
 
-    User ||--o{ GroupMember : "has"
-    Group ||--o{ GroupMember : "has"
-    Group ||--o{ Album : "has"
-    GroupMember ||--o{ Photo : "uploads"
-    Album ||--o{ Photo : "contains"
+    User ||--o{ PhotoSpaceMember : "has"
+    PhotoSpace ||--o{ PhotoSpaceMember : "has"
+    PhotoSpace ||--o{ PhotoAlbum : "has"
+    PhotoSpaceMember ||--o{ Photo : "creates"
+    PhotoAlbum ||--o{ Photo : "contains"
