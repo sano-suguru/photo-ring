@@ -8,77 +8,78 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  email         String        @unique
-  name          String
-  password      String
-  groups        GroupMember[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id            String             @id
+  email         String             @unique
+  displayName   String
+  // hashedPasswordは削除（Cognitoで管理）
+  cognitoSub    String             @unique  // Cognito User Pool内のユーザーの一意識別子
+  spaces        PhotoSpaceMember[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 }
 
-model Group {
-  id          String        @id @default(cuid())
+model PhotoSpace {
+  id          String             @id @default(cuid())
   name        String
   description String?
-  isPrivate   Boolean       @default(false)    // プライベートグループかどうかのフラグ
-  members     GroupMember[]
-  albums      Album[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  isPrivate   Boolean            @default(false)
+  members     PhotoSpaceMember[]
+  albums      PhotoAlbum[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 }
 
-model GroupMember {
-  id        String     @id @default(cuid())
-  groupId   String
+model PhotoSpaceMember {
+  id        String         @id @default(cuid())
+  spaceId   String
   userId    String
-  role      GroupRole  @default(MEMBER)
-  group     Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  photos    Photo[]    // アップロードした写真との関連
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  role      MemberRole     @default(CONTRIBUTOR)
+  space     PhotoSpace     @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos    Photo[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
-  @@unique([groupId, userId])
-  @@index([groupId])
+  @@unique([spaceId, userId])
+  @@index([spaceId])
   @@index([userId])
 }
 
-model Album {
-  id          String    @id @default(cuid())
+model PhotoAlbum {
+  id          String      @id @default(cuid())
   title       String
   description String?
-  groupId     String
-  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  spaceId     String
+  space       PhotoSpace  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   photos      Photo[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  @@index([groupId])
+  @@index([spaceId])
 }
 
 model Photo {
-  id            String      @id @default(cuid())
-  title         String
-  description   String?
-  filename      String      // S3内のファイル名
-  originalName  String      // アップロード時の元のファイル名
-  mimeType      String      // ファイルのMIMEタイプ
-  size          Int         // ファイルサイズ（バイト）
-  width         Int?        // 画像の幅
-  height        Int?        // 画像の高さ
-  metadata      Json?       // EXIF データなどのメタデータ
-  uploaderId    String      // アップロードしたGroupMemberのID
-  uploader      GroupMember @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
-  albums        Album[]     // 所属するアルバム
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id             String            @id @default(cuid())
+  title          String
+  description    String?
+  storagePath    String
+  sourceFilename String
+  mimeType       String
+  fileSizeBytes  Int
+  imageWidth     Int?
+  imageHeight    Int?
+  imageMetadata  Json?
+  createdById    String
+  creator        PhotoSpaceMember  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  albums         PhotoAlbum[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
-  @@index([uploaderId])
+  @@index([createdById])
 }
 
-enum GroupRole {
-  ADMIN    // グループの管理、メンバー管理
-  MEMBER   // 写真のアップロード、アルバム作成
-  VIEWER   // 閲覧のみ
+enum MemberRole {
+  OWNER
+  CONTRIBUTOR
+  VIEWER
 }
